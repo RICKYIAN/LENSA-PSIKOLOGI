@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!-- LENSA PSIKO — versi gabungan: aplikasi pembelajaran + Urus Kandungan Admin/Guru -->
+<!-- LENSA PSIKO — Firebase Edition: Authentication + Cloud Firestore -->
 <html lang="ms" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Required for embedded YouTube player identity / Error 153 prevention -->
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>LENSA PSIKOLOGI - Literasi Emosi</title>
+    <title>LENSA PSIKO - Literasi Emosi & Urus Kandungan</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -460,6 +460,78 @@
         }
 
     </style>
+
+    <!-- Firebase: browser ES modules (sesuai untuk GitHub Pages tanpa npm/bundler) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence
+        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            getDoc,
+            setDoc,
+            getDocs,
+            query,
+            orderBy,
+            updateDoc,
+            deleteDoc,
+            serverTimestamp,
+            writeBatch
+        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3kKFsD8pkAG07ivnxMco5TQwOdVUEtOk",
+            authDomain: "lensa-psikologi.firebaseapp.com",
+            projectId: "lensa-psikologi",
+            storageBucket: "lensa-psikologi.firebasestorage.app",
+            messagingSenderId: "448051802326",
+            appId: "1:448051802326:web:21250aba4339a9394d5977",
+            measurementId: "G-81ZV2L61JH"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Kekalkan sesi login selepas refresh/tutup-buka pelayar.
+        try {
+            await setPersistence(auth, browserLocalPersistence);
+        } catch (error) {
+            console.warn('Firebase Auth persistence tidak dapat ditetapkan:', error);
+        }
+
+        // Bridge untuk JavaScript lama dalam fail ini yang menggunakan fungsi global/onclick.
+        window.firebaseApi = {
+            auth, db,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            collection,
+            doc,
+            getDoc,
+            setDoc,
+            getDocs,
+            query,
+            orderBy,
+            updateDoc,
+            deleteDoc,
+            serverTimestamp,
+            writeBatch
+        };
+        window.dispatchEvent(new Event('firebase-ready'));
+        console.info('LENSA PSIKO: Firebase siap disambungkan.');
+    </script>
+
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased transition-colors duration-300 min-h-screen flex flex-col">
 
@@ -469,7 +541,7 @@
                 <!-- Logo -->
                 <div class="flex items-center cursor-pointer" onclick="navigate('home')">
                     <span class="material-icons text-primary text-3xl mr-2">psychology</span>
-                    <span class="font-bold text-xl tracking-tight text-primary">LENSA PSIKOLOGI</span>
+                    <span class="font-bold text-xl tracking-tight text-primary">LENSA PSIKO</span>
                 </div>
 
                 <!-- Desktop Menu -->
@@ -529,7 +601,7 @@
             <!-- Hero -->
             <div class="bg-indigo-50 dark:bg-indigo-900/20 py-16 md:py-24">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6" data-i18n="hero_title">Lensa Psikologi: Literasi Emosi</h1>
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6" data-i18n="hero_title">Modul LENSA: Literasi Emosi</h1>
                     <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto" data-i18n="hero_subtitle">Bantu Diri Untuk Bantu Orang Lain. Tingkatkan kesedaran emosi, pengurusan stres dan empati anda melalui modul interaktif kami.</p>
                     <div class="flex flex-col sm:flex-row justify-center gap-4">
                         <button onclick="navigate('modules')" class="bg-primary hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1" data-i18n="btn_start_learning">Mula Belajar</button>
@@ -827,7 +899,7 @@
                                     <div class="admin-or">ATAU</div>
                                     <input id="admin-ep-pdf-url" type="text" placeholder="URL ke fail PDF">
                                 </div>
-                                <div class="admin-help-text">Format PDF, maksimum 10MB. Fail muat naik disimpan dalam IndexedDB pelayar supaya tidak membebankan localStorage.</div>
+                                <div class="admin-help-text">Untuk kandungan yang dikongsi melalui database, gunakan URL PDF (contohnya pautan Google Drive yang boleh diakses). Muat naik fail terus akan ditambah kemudian melalui Firebase Storage.</div>
                                 <div id="admin-existing-pdf" class="admin-help-text hidden"></div>
                             </div>
                         </div>
@@ -999,7 +1071,7 @@
                             <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Peranan</label>
                             <select id="reg-role" class="w-full p-3 sm:p-3.5 text-sm sm:text-base rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-800 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition cursor-pointer bg-white">
                                 <option value="murid">Murid</option>
-                                <option value="guru">Guru / PRSD</option>
+                                <option value="guru">Guru / PRSD (perlu kelulusan admin)</option>
                                 <option value="komuniti">Ibu Bapa / Komuniti</option>
                             </select>
                         </div>
@@ -1086,8 +1158,9 @@
         };
 
         // Application State
-        let lensaContent = JSON.parse(localStorage.getItem('lensa_content')) || JSON.parse(JSON.stringify(DEFAULT_CONTENT));
-        let currentUser = JSON.parse(localStorage.getItem('lensa_current_user')) || null;
+        let lensaContent = JSON.parse(JSON.stringify(DEFAULT_CONTENT));
+        let currentUser = null;
+        let firebaseAuthListenerReady = false;
         
         // Device-level settings (persists across logouts)
         let deviceSettings = JSON.parse(localStorage.getItem('lensa_settings')) || {
@@ -1099,12 +1172,173 @@
             timeoutMinutes: 30
         };
 
+
+
+        // ==========================================
+        // FIREBASE DATA LAYER
+        // ==========================================
+        function getFirebaseApi() {
+            if (!window.firebaseApi) {
+                throw new Error('Firebase belum siap. Pastikan sambungan internet tersedia dan cuba muat semula laman.');
+            }
+            return window.firebaseApi;
+        }
+
+        function firebaseErrorMessage(error, fallback = 'Ralat Firebase.') {
+            const code = String(error?.code || '');
+            const messages = {
+                'auth/invalid-credential': 'E-mel atau kata laluan tidak sah.',
+                'auth/invalid-email': 'Format e-mel tidak sah.',
+                'auth/email-already-in-use': 'E-mel ini sudah didaftarkan.',
+                'auth/weak-password': 'Kata laluan terlalu lemah. Gunakan sekurang-kurangnya 8 aksara.',
+                'auth/too-many-requests': 'Terlalu banyak percubaan. Cuba lagi kemudian.',
+                'auth/network-request-failed': 'Sambungan rangkaian gagal. Semak internet anda.',
+                'permission-denied': 'Akses database ditolak. Semak Firestore Security Rules atau peranan akaun.',
+                'failed-precondition': 'Database belum siap atau konfigurasi Firestore belum lengkap.'
+            };
+            return messages[code] || error?.message || fallback;
+        }
+
+        function normaliseUserProfile(firebaseUser, data = {}) {
+            return {
+                id: firebaseUser.uid,
+                name: data.name || firebaseUser.email?.split('@')[0] || 'Pengguna',
+                email: data.email || firebaseUser.email || '',
+                role: data.role || 'murid',
+                requestedRole: data.requestedRole || null,
+                progress: (data.progress && typeof data.progress === 'object') ? data.progress : {},
+                reflections: (data.reflections && typeof data.reflections === 'object') ? data.reflections : {}
+            };
+        }
+
+        async function loadCurrentUserProfile(firebaseUser) {
+            const { db, doc, getDoc, setDoc, serverTimestamp } = getFirebaseApi();
+            const ref = doc(db, 'users', firebaseUser.uid);
+            let snapshot = await getDoc(ref);
+
+            // Semasa pendaftaran, Auth boleh memaklumkan listener sedikit lebih awal daripada penulisan profil.
+            if (!snapshot.exists()) {
+                await new Promise(resolve => setTimeout(resolve, 350));
+                snapshot = await getDoc(ref);
+            }
+
+            if (!snapshot.exists()) {
+                const fallback = {
+                    name: firebaseUser.email?.split('@')[0] || 'Pengguna',
+                    email: firebaseUser.email || '',
+                    role: 'murid',
+                    progress: {},
+                    reflections: {},
+                    createdAt: serverTimestamp()
+                };
+                await setDoc(ref, fallback, { merge: true });
+                currentUser = normaliseUserProfile(firebaseUser, fallback);
+            } else {
+                currentUser = normaliseUserProfile(firebaseUser, snapshot.data());
+            }
+            return currentUser;
+        }
+
+        async function saveCurrentUserToFirestore() {
+            if (!currentUser) return;
+            const { auth, db, doc, setDoc, serverTimestamp } = getFirebaseApi();
+            if (!auth.currentUser || auth.currentUser.uid !== currentUser.id) return;
+
+            await setDoc(doc(db, 'users', currentUser.id), {
+                name: currentUser.name,
+                email: currentUser.email,
+                role: currentUser.role,
+                ...(currentUser.requestedRole ? { requestedRole: currentUser.requestedRole } : {}),
+                progress: currentUser.progress || {},
+                reflections: currentUser.reflections || {},
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        }
+
+        async function loadEpisodesFromFirestore({ quiet = false } = {}) {
+            try {
+                const { db, collection, getDocs, query, orderBy } = getFirebaseApi();
+                const snapshot = await getDocs(query(collection(db, 'episodes'), orderBy('nombor')));
+
+                if (snapshot.empty) {
+                    // Papar data contoh sehingga guru/admin menekan "Reset Data Asal" untuk seed Firestore.
+                    lensaContent = JSON.parse(JSON.stringify(DEFAULT_CONTENT));
+                    if (!quiet) showToast('Database episod masih kosong. Log masuk sebagai guru/admin dan pilih Reset Data Asal untuk memasukkan episod contoh.', 6500);
+                } else {
+                    lensaContent = {
+                        episodes: snapshot.docs.map(snap => ({ id: snap.id, ...snap.data() }))
+                    };
+                }
+
+                // localStorage lama tidak lagi menjadi sumber kandungan.
+                localStorage.removeItem('lensa_content');
+                if (currentView === 'modules') renderEpisodes();
+                if (currentView === 'admin' && currentUser && ['guru','admin'].includes(currentUser.role)) renderAdmin();
+                return lensaContent.episodes;
+            } catch (error) {
+                console.error('Gagal membaca episod Firestore:', error);
+                if (!quiet) showToast(firebaseErrorMessage(error, 'Gagal membaca episod dari database.'), 6000);
+                return lensaContent.episodes;
+            }
+        }
+
+        async function saveEpisodeToFirestore(ep) {
+            const { db, doc, setDoc, serverTimestamp } = getFirebaseApi();
+            const payload = {
+                nombor: Number(ep.nombor),
+                tajuk: String(ep.tajuk || ''),
+                tersembunyi: Boolean(ep.tersembunyi),
+                videos: Array.isArray(ep.videos) ? ep.videos : [],
+                dokumen: Array.isArray(ep.dokumen) ? ep.dokumen : [],
+                updatedAt: serverTimestamp()
+            };
+            await setDoc(doc(db, 'episodes', ep.id), payload, { merge: true });
+        }
+
+        async function saveEpisodeOrderToFirestore(ordered) {
+            const { db, doc, writeBatch, serverTimestamp } = getFirebaseApi();
+            const batch = writeBatch(db);
+            ordered.forEach((ep, index) => {
+                ep.nombor = index + 1;
+                batch.update(doc(db, 'episodes', ep.id), {
+                    nombor: ep.nombor,
+                    updatedAt: serverTimestamp()
+                });
+            });
+            await batch.commit();
+        }
+
+        function setupFirebaseAuthListener() {
+            if (firebaseAuthListenerReady || !window.firebaseApi) return;
+            firebaseAuthListenerReady = true;
+            const { auth, onAuthStateChanged } = getFirebaseApi();
+
+            onAuthStateChanged(auth, async firebaseUser => {
+                try {
+                    if (firebaseUser) {
+                        await loadCurrentUserProfile(firebaseUser);
+                    } else {
+                        currentUser = null;
+                    }
+                } catch (error) {
+                    console.error('Gagal memuatkan profil pengguna:', error);
+                    currentUser = null;
+                    showToast(firebaseErrorMessage(error, 'Gagal memuatkan profil pengguna.'), 6000);
+                }
+
+                renderNavAuth();
+                if (currentView === 'modules') renderEpisodes();
+                if (currentView === 'profile' && currentUser) renderProfile();
+            });
+        }
+
+
         // Translations Dictionary
         const i18n = {
             'ms': {
                 nav_home: "Laman Utama", nav_modules: "Modul", nav_help: "Pusat Bantuan", nav_settings: "Tetapan",
                 btn_login: "Log Masuk", btn_logout: "Log Keluar",
-                hero_title: "Lensa Psikologi: Literasi Emosi", hero_subtitle: "Bantu Diri Untuk Bantu Orang Lain. Tingkatkan kesedaran emosi, pengurusan stres dan empati anda.",
+                hero_title: "Modul LENSA: Literasi Emosi", hero_subtitle: "Bantu Diri Untuk Bantu Orang Lain. Tingkatkan kesedaran emosi, pengurusan stres dan empati anda.",
                 btn_start_learning: "Mula Belajar", btn_need_help: "Perlukan Bantuan?",
                 card_access_title: "Akses Modul Mengikut Episod", card_access_desc: "Tonton video interaktif dan jawab refleksi kendiri.",
                 card_guide_title: "Panduan Penggunaan", card_guide_desc: "Manual pengguna untuk murid, guru, dan komuniti.",
@@ -1119,7 +1353,7 @@
                 btn_cancel: "Batal", btn_save_reflection: "Simpan Refleksi",
                 profile_title: "Profil Pengguna", btn_edit_profile: "Edit Profil",
                 profile_stats: "Statistik Pembelajaran", stat_episodes: "Episod", stat_reflections: "Refleksi", stat_progress: "Kadar", profile_quicknav: "Navigasi Pantas",
-                settings_title: "Tetapan", settings_notice: "Sesuaikan LENSA PSIKOLOGI mengikut keselesaan anda.",
+                settings_title: "Tetapan", settings_notice: "Sesuaikan LENSA PSIKO mengikut keselesaan anda.",
                 set_display: "Paparan & Aksesibiliti", set_font_size: "Saiz Tulisan", set_font_family: "Jenis Font", set_theme: "Tema", theme_light: "Terang", theme_dark: "Gelap", theme_hc: "Kontras Tinggi", set_reduced_motion: "Kurangkan Animasi",
                 set_account: "Tetapan Akaun", set_timeout: "Tamat Sesi Automatik (Minit)", set_timeout_desc: "Amaran akan diberikan 1 minit sebelum sesi tamat.",
                 help_title: "Pusat Bantuan & Rujukan", help_desc: "Kami sedia membantu. Jika anda berasa tertekan, sila hubungi:", help_disclaimer: "Penafian: Laman web ini bukan pengganti rawatan profesional.",
@@ -1129,7 +1363,7 @@
             'en': {
                 nav_home: "Home", nav_modules: "Modules", nav_help: "Help Center", nav_settings: "Settings",
                 btn_login: "Log In", btn_logout: "Log Out",
-                hero_title: "LENSA Psychological: Emotion Literacy", hero_subtitle: "Help Yourself to Help Others. Improve emotional awareness, stress management and empathy.",
+                hero_title: "LENSA Module: Emotion Literacy", hero_subtitle: "Help Yourself to Help Others. Improve emotional awareness, stress management and empathy.",
                 btn_start_learning: "Start Learning", btn_need_help: "Need Help?",
                 card_access_title: "Access Modules by Episode", card_access_desc: "Watch interactive videos and answer self-reflections.",
                 card_guide_title: "User Guide", card_guide_desc: "Manual for students, teachers, and community.",
@@ -1342,40 +1576,67 @@
             }
         }
 
-        function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            if(!email) return showToast("Sila masukkan e-mel");
-            
-            // Mock Login
-            currentUser = {
-                id: 'u' + Date.now(),
-                name: email.split('@')[0],
-                email: email,
-                role: email.includes('guru') || email.includes('admin') ? 'guru' : 'murid',
-                progress: {},
-                reflections: {}
-            };
-            localStorage.setItem('lensa_current_user', JSON.stringify(currentUser));
-            showToast(`${getLangText('toast_login')}, ${currentUser.name}!`);
-            closeAuthModal();
-            renderNavAuth();
-            navigate('home');
-        }
-        
-        function handleRegister() {
-            const email = document.getElementById('reg-email').value;
-            const name = document.getElementById('reg-name').value;
-            const role = document.getElementById('reg-role').value;
-            if(!email || !name) return showToast("Lengkapkan maklumat");
-            
-            currentUser = { id: 'u' + Date.now(), name, email, role, progress: {}, reflections: {} };
-            localStorage.setItem('lensa_current_user', JSON.stringify(currentUser));
-            showToast("Pendaftaran berjaya!");
-            closeAuthModal();
-            renderNavAuth();
-            navigate('home');
-        }
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-pw').value;
+            if (!email || !password) return showToast('Masukkan e-mel dan kata laluan.');
 
+            try {
+                const { auth, signInWithEmailAndPassword } = getFirebaseApi();
+                const credential = await signInWithEmailAndPassword(auth, email, password);
+                await loadCurrentUserProfile(credential.user);
+                showToast(`${getLangText('toast_login')}, ${currentUser.name}!`);
+                closeAuthModal();
+                renderNavAuth();
+                navigate('home');
+            } catch (error) {
+                console.error('Login Firebase gagal:', error);
+                showToast(firebaseErrorMessage(error, 'Log masuk gagal.'), 5500);
+            }
+        }
+        async function handleRegister() {
+            const email = document.getElementById('reg-email').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            const password = document.getElementById('reg-pw').value;
+            const selectedRole = document.getElementById('reg-role').value;
+            const agreed = document.getElementById('reg-agree').checked;
+
+            if (!email || !name || !password) return showToast('Lengkapkan nama, e-mel dan kata laluan.');
+            if (password.length < 8) return showToast('Kata laluan mestilah sekurang-kurangnya 8 aksara.');
+            if (!agreed) return showToast('Sila bersetuju dengan Terma & Privasi.');
+
+            // Pengguna tidak boleh menaik taraf diri sendiri kepada guru melalui borang awam.
+            // Jika memilih guru, permintaan direkodkan tetapi akaun bermula sebagai murid.
+            const safeRole = selectedRole === 'komuniti' ? 'komuniti' : 'murid';
+
+            try {
+                const { auth, db, createUserWithEmailAndPassword, doc, setDoc, serverTimestamp } = getFirebaseApi();
+                const credential = await createUserWithEmailAndPassword(auth, email, password);
+                const firebaseUser = credential.user;
+
+                const profile = {
+                    name,
+                    email,
+                    role: safeRole,
+                    requestedRole: selectedRole === 'guru' ? 'guru' : safeRole,
+                    progress: {},
+                    reflections: {},
+                    createdAt: serverTimestamp()
+                };
+                await setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true });
+                currentUser = normaliseUserProfile(firebaseUser, profile);
+
+                showToast(selectedRole === 'guru'
+                    ? 'Pendaftaran berjaya. Akaun guru perlu diluluskan oleh pentadbir.'
+                    : 'Pendaftaran berjaya!');
+                closeAuthModal();
+                renderNavAuth();
+                navigate('home');
+            } catch (error) {
+                console.error('Pendaftaran Firebase gagal:', error);
+                showToast(firebaseErrorMessage(error, 'Pendaftaran gagal.'), 6000);
+            }
+        }
         function renderLogoutComponents() {
             const logoutHtml = `
                 <button onclick="confirmLogOut()" class="flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg font-medium transition w-full">
@@ -1396,7 +1657,13 @@
             document.getElementById('modal-logout-confirm').classList.remove('hidden');
         }
 
-        function executeLogOut() {
+        async function executeLogOut() {
+            try {
+                const { auth, signOut } = getFirebaseApi();
+                await signOut(auth);
+            } catch (error) {
+                console.warn('Firebase signOut gagal:', error);
+            }
             currentUser = null;
             localStorage.removeItem('lensa_current_user');
             document.getElementById('modal-logout-confirm').classList.add('hidden');
@@ -1404,8 +1671,6 @@
             showToast(getLangText('toast_logout'));
             navigate('home');
         }
-
-        let sessionTimer, warningTimer;
         function resetSessionTimer() {
             if(!currentUser) return;
             clearTimeout(sessionTimer);
@@ -1569,8 +1834,8 @@
              
             // Mark as started 
             if(currentUser && (!currentUser.progress[ep.id] || currentUser.progress[ep.id] !== 'selesai')) { 
-                currentUser.progress[ep.id] = 'mula'; 
-                localStorage.setItem('lensa_current_user', JSON.stringify(currentUser)); 
+                currentUser.progress[ep.id] = 'mula';
+                saveCurrentUserToFirestore().catch(error => console.warn('Gagal menyimpan kemajuan:', error)); 
             } 
         } 
  
@@ -1590,23 +1855,27 @@
             navigate('evaluation'); 
         } 
  
-        function saveReflection() { 
-            const epId = document.getElementById('reflection-ep-title').dataset.epid; 
-            const a1 = document.getElementById('ref-a1').value; 
-            const a2 = document.getElementById('ref-a2').value; 
-            const a3 = document.getElementById('ref-a3').value; 
-             
-            if(!a1 || !a2 || !a3) return showToast("Sila lengkapkan semua soalan."); 
-             
-            // Save logic 
-            currentUser.reflections[epId] = { a1, a2, a3, timestamp: Date.now() }; 
-            currentUser.progress[epId] = 'selesai'; 
-            localStorage.setItem('lensa_current_user', JSON.stringify(currentUser)); 
-             
-            showToast(getLangText('toast_saved')); 
-            navigate('modules'); 
-        } 
- 
+        async function saveReflection() {
+            const epId = document.getElementById('reflection-ep-title').dataset.epid;
+            const a1 = document.getElementById('ref-a1').value.trim();
+            const a2 = document.getElementById('ref-a2').value.trim();
+            const a3 = document.getElementById('ref-a3').value.trim();
+
+            if (!currentUser) { openAuthModal(); return; }
+            if (!a1 || !a2 || !a3) return showToast('Sila lengkapkan semua soalan.');
+
+            currentUser.reflections[epId] = { a1, a2, a3, timestamp: Date.now() };
+            currentUser.progress[epId] = 'selesai';
+
+            try {
+                await saveCurrentUserToFirestore();
+                showToast(getLangText('toast_saved'));
+                navigate('modules');
+            } catch (error) {
+                console.error('Gagal menyimpan refleksi:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal menyimpan refleksi.'), 6000);
+            }
+        }
         function renderProfile() { 
             document.getElementById('profile-name').innerText = currentUser.name; 
             document.getElementById('profile-email').innerText = currentUser.email; 
@@ -1635,9 +1904,10 @@
         }
 
         function persistContent() {
-            localStorage.setItem('lensa_content', JSON.stringify(lensaContent));
+            // Firestore ialah sumber data utama. Fungsi ini dikekalkan untuk keserasian kod lama.
+            // Jangan simpan semula lensa_content ke localStorage kerana ia boleh menindih data database.
+            localStorage.removeItem('lensa_content');
         }
-
         function refreshLucide() {
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
                 window.lucide.createIcons();
@@ -1878,6 +2148,10 @@
         }
 
         async function adminSaveEpisode() {
+            if (!currentUser || !['guru', 'admin'].includes(currentUser.role)) {
+                return showToast('Akses ditolak. Hanya guru/admin boleh mengurus episod.');
+            }
+
             const editId = document.getElementById('admin-edit-id').value;
             const title = document.getElementById('admin-ep-title').value.trim();
             const num = parseInt(document.getElementById('admin-ep-num').value, 10);
@@ -1893,6 +2167,11 @@
             const duplicate = lensaContent.episodes.find(ep => Number(ep.nombor) === num && ep.id !== editId);
             if (duplicate) return showToast(`Nombor episod ${num} sudah digunakan.`);
 
+            // Firebase Firestore menyimpan metadata/URL; fail sebenar memerlukan Firebase Storage.
+            if (pdfFileInput) {
+                return showToast('Untuk versi database ini, gunakan URL PDF dahulu. Muat naik fail terus akan disambungkan melalui Firebase Storage kemudian.', 6500);
+            }
+
             let ep = editId ? lensaContent.episodes.find(e => e.id === editId) : null;
             const isNew = !ep;
             if (!ep) {
@@ -1906,37 +2185,11 @@
                 };
             }
 
-            const previousDocs = Array.isArray(ep.dokumen) ? [...ep.dokumen] : [];
-            let nextDocs = previousDocs;
-
-            // Pilihan PDF baharu: fail mengatasi URL. Jika kedua-duanya kosong ketika edit, kekalkan PDF lama.
-            if (pdfFileInput) {
-                if (pdfFileInput.type !== 'application/pdf' && !pdfFileInput.name.toLowerCase().endsWith('.pdf')) {
-                    return showToast('Ralat: Sila pilih fail PDF sahaja.');
-                }
-                const maxSize = 10 * 1024 * 1024;
-                if (pdfFileInput.size > maxSize) {
-                    return showToast('Ralat: Saiz fail PDF melebihi had 10MB.');
-                }
-
-                const key = `pdf_${ep.id}_${Date.now()}`;
-                try {
-                    await storePdfBlob(key, pdfFileInput);
-                } catch (e) {
-                    console.error(e);
-                    return showToast('Gagal menyimpan PDF dalam pelayar. Cuba gunakan pautan URL.');
-                }
-
-                nextDocs = [{
-                    tajuk: pdfFileInput.name,
-                    url: `idb:${key}`,
-                    jenis: 'pdf',
-                    saiz: pdfFileInput.size
-                }];
-            } else if (pdfUrlInput) {
+            let nextDocs = Array.isArray(ep.dokumen) ? [...ep.dokumen] : [];
+            if (pdfUrlInput) {
                 try {
                     new URL(pdfUrlInput, window.location.href);
-                } catch (e) {
+                } catch (error) {
                     return showToast('URL PDF tidak sah.');
                 }
                 nextDocs = [{ tajuk: 'Modul PDF', url: pdfUrlInput, jenis: 'pdf' }];
@@ -1944,66 +2197,65 @@
                 nextDocs = [];
             }
 
-            const oldIdbKeys = previousDocs.map(d => getIdbKeyFromUrl(d.url)).filter(Boolean);
-            const newIdbKeys = nextDocs.map(d => getIdbKeyFromUrl(d.url)).filter(Boolean);
-
             ep.nombor = num;
             ep.tajuk = title;
             ep.videos = vid ? [{ tajuk: 'Video Utama', url: vid, jenis: 'link' }] : [];
             ep.dokumen = nextDocs;
             if (typeof ep.tersembunyi !== 'boolean') ep.tersembunyi = false;
 
-            if (isNew) lensaContent.episodes.push(ep);
-
             try {
-                persistContent();
-            } catch (e) {
-                if (isNew) lensaContent.episodes = lensaContent.episodes.filter(x => x.id !== ep.id);
-                showToast('Gagal menyimpan data kandungan. Storan pelayar mungkin penuh.');
-                console.warn(e);
-                return;
+                await saveEpisodeToFirestore(ep);
+                await loadEpisodesFromFirestore({ quiet: true });
+                showToast(isNew ? 'Episod berjaya ditambah ke database.' : 'Episod berjaya dikemas kini dalam database.');
+                adminClearForm(false);
+                renderAdmin();
+                renderEpisodes();
+            } catch (error) {
+                console.error('Gagal menyimpan episod Firestore:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal menyimpan episod ke database.'), 6500);
             }
-
-            // Bersihkan blob lama yang telah diganti.
-            for (const key of oldIdbKeys) {
-                if (!newIdbKeys.includes(key)) await deletePdfBlob(key);
-            }
-
-            showToast(isNew ? 'Episod berjaya ditambah.' : 'Episod berjaya dikemas kini.');
-            adminClearForm(false);
-            renderAdmin();
-            renderEpisodes();
         }
-
         async function deleteEpisode(id) {
             const ep = lensaContent.episodes.find(e => e.id === id);
             if (!ep) return;
             if (!confirm(`Padam Episod ${ep.nombor}: ${ep.tajuk}?`)) return;
 
-            const keys = (ep.dokumen || []).map(d => getIdbKeyFromUrl(d.url)).filter(Boolean);
-            lensaContent.episodes = lensaContent.episodes.filter(e => e.id !== id);
-            persistContent();
-            for (const key of keys) await deletePdfBlob(key);
+            try {
+                const { db, doc, deleteDoc } = getFirebaseApi();
+                await deleteDoc(doc(db, 'episodes', id));
 
-            if (currentUser?.progress) delete currentUser.progress[id];
-            if (currentUser?.reflections) delete currentUser.reflections[id];
-            if (currentUser) localStorage.setItem('lensa_current_user', JSON.stringify(currentUser));
+                if (currentUser?.progress) delete currentUser.progress[id];
+                if (currentUser?.reflections) delete currentUser.reflections[id];
+                await saveCurrentUserToFirestore();
+                await loadEpisodesFromFirestore({ quiet: true });
 
-            renderAdmin();
-            renderEpisodes();
-            showToast('Episod dipadam daripada senarai.');
+                renderAdmin();
+                renderEpisodes();
+                showToast('Episod dipadam daripada database.');
+            } catch (error) {
+                console.error('Gagal memadam episod:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal memadam episod.'), 6000);
+            }
         }
-
-        function toggleEpisodeVisibility(id) {
+        async function toggleEpisodeVisibility(id) {
             const ep = lensaContent.episodes.find(e => e.id === id);
             if (!ep) return;
-            ep.tersembunyi = !ep.tersembunyi;
-            persistContent();
-            renderAdmin();
-            renderEpisodes();
-            showToast(ep.tersembunyi ? 'Episod disembunyikan.' : 'Episod ditayangkan semula.');
+            const nextValue = !ep.tersembunyi;
+            try {
+                const { db, doc, updateDoc, serverTimestamp } = getFirebaseApi();
+                await updateDoc(doc(db, 'episodes', id), {
+                    tersembunyi: nextValue,
+                    updatedAt: serverTimestamp()
+                });
+                ep.tersembunyi = nextValue;
+                renderAdmin();
+                renderEpisodes();
+                showToast(ep.tersembunyi ? 'Episod disembunyikan.' : 'Episod ditayangkan semula.');
+            } catch (error) {
+                console.error('Gagal mengubah status episod:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal mengubah status episod.'), 6000);
+            }
         }
-
         function adminRenderOrderList() {
             const list = document.getElementById('admin-order-list');
             if (!list) return;
@@ -2050,17 +2302,21 @@
             return [...lensaContent.episodes].sort((a,b) => (a.nombor || 0) - (b.nombor || 0));
         }
 
-        function applyEpisodeOrder(ordered) {
+        async function applyEpisodeOrder(ordered) {
             ordered.forEach((ep, index) => ep.nombor = index + 1);
-            const byId = new Map(ordered.map(ep => [ep.id, ep]));
-            lensaContent.episodes = ordered.map(ep => byId.get(ep.id));
-            persistContent();
-            adminRenderOrderList();
-            renderAdmin();
-            renderEpisodes();
+            lensaContent.episodes = ordered;
+            try {
+                await saveEpisodeOrderToFirestore(ordered);
+                adminRenderOrderList();
+                renderAdmin();
+                renderEpisodes();
+            } catch (error) {
+                console.error('Gagal menyimpan urutan:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal menyimpan urutan episod.'), 6000);
+                await loadEpisodesFromFirestore({ quiet: true });
+            }
         }
-
-        function moveEpisode(id, direction) {
+        async function moveEpisode(id, direction) {
             const ordered = getEpisodesInOrder();
             const index = ordered.findIndex(ep => ep.id === id);
             const next = index + direction;
@@ -2068,14 +2324,19 @@
             [ordered[index], ordered[next]] = [ordered[next], ordered[index]];
             ordered.forEach((ep, i) => ep.nombor = i + 1);
             lensaContent.episodes = ordered;
-            persistContent();
-            renderAdmin();
-            renderEpisodes();
-            adminSwitchPanel('order');
-            showToast('Urutan episod dikemas kini.');
+            try {
+                await saveEpisodeOrderToFirestore(ordered);
+                renderAdmin();
+                renderEpisodes();
+                adminSwitchPanel('order');
+                showToast('Urutan episod dikemas kini dalam database.');
+            } catch (error) {
+                console.error('Gagal menyimpan urutan:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal menyimpan urutan episod.'), 6000);
+                await loadEpisodesFromFirestore({ quiet: true });
+            }
         }
-
-        function reorderEpisodeBefore(draggedId, targetId) {
+        async function reorderEpisodeBefore(draggedId, targetId) {
             const ordered = getEpisodesInOrder();
             const from = ordered.findIndex(ep => ep.id === draggedId);
             let to = ordered.findIndex(ep => ep.id === targetId);
@@ -2085,24 +2346,51 @@
             ordered.splice(to, 0, moved);
             ordered.forEach((ep, i) => ep.nombor = i + 1);
             lensaContent.episodes = ordered;
-            persistContent();
-            renderAdmin();
-            renderEpisodes();
-            adminSwitchPanel('order');
-            showToast('Urutan episod dikemas kini.');
+            try {
+                await saveEpisodeOrderToFirestore(ordered);
+                renderAdmin();
+                renderEpisodes();
+                adminSwitchPanel('order');
+                showToast('Urutan episod dikemas kini dalam database.');
+            } catch (error) {
+                console.error('Gagal menyimpan urutan:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal menyimpan urutan episod.'), 6000);
+                await loadEpisodesFromFirestore({ quiet: true });
+            }
         }
-
         async function adminResetData() {
-            if (!confirm('Kembalikan semua kandungan episod kepada data asal? Perubahan admin akan dipadam.')) return;
-            lensaContent = JSON.parse(JSON.stringify(DEFAULT_CONTENT));
-            persistContent();
-            await clearPdfStore();
-            adminClearForm(false);
-            renderAdmin();
-            renderEpisodes();
-            showToast('Data dikembalikan kepada asal.');
-        }
+            if (!currentUser || !['guru', 'admin'].includes(currentUser.role)) {
+                return showToast('Akses ditolak. Hanya guru/admin boleh mengurus episod.');
+            }
+            if (!confirm('Kembalikan semua kandungan episod kepada data asal? Data episod semasa dalam Firestore akan diganti.')) return;
 
+            try {
+                const { db, collection, getDocs, doc, writeBatch, serverTimestamp } = getFirebaseApi();
+                const existing = await getDocs(collection(db, 'episodes'));
+                const batch = writeBatch(db);
+                existing.docs.forEach(snap => batch.delete(doc(db, 'episodes', snap.id)));
+                DEFAULT_CONTENT.episodes.forEach(ep => {
+                    batch.set(doc(db, 'episodes', ep.id), {
+                        nombor: ep.nombor,
+                        tajuk: ep.tajuk,
+                        tersembunyi: Boolean(ep.tersembunyi),
+                        videos: ep.videos || [],
+                        dokumen: ep.dokumen || [],
+                        updatedAt: serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                await clearPdfStore();
+                await loadEpisodesFromFirestore({ quiet: true });
+                adminClearForm(false);
+                renderAdmin();
+                renderEpisodes();
+                showToast('Data asal berjaya dimasukkan ke Firestore.');
+            } catch (error) {
+                console.error('Reset Firestore gagal:', error);
+                showToast(firebaseErrorMessage(error, 'Gagal reset data Firestore.'), 6500);
+            }
+        }
         function saveSettings() { 
             localStorage.setItem('lensa_settings', JSON.stringify(deviceSettings)); 
             applySettings(); 
@@ -2146,13 +2434,29 @@
             rad.addEventListener('change', e => { if(e.target.checked) { deviceSettings.theme = e.target.value; saveSettings(); } }); 
         }); 
  
-        // Initialize App 
-        window.addEventListener('DOMContentLoaded', () => { 
-            applySettings(); 
-            applyTranslations(); 
-            renderNavAuth();
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', async () => {
+            applySettings();
+            applyTranslations();
             refreshLucide();
-            navigate('home'); 
+            navigate('home');
+
+            // Firebase browser modules dijalankan sebelum DOMContentLoaded.
+            // Jika rangkaian lambat, tunggu event firebase-ready sekali.
+            if (!window.firebaseApi) {
+                await new Promise(resolve => {
+                    const timer = setTimeout(resolve, 5000);
+                    window.addEventListener('firebase-ready', () => { clearTimeout(timer); resolve(); }, { once: true });
+                });
+            }
+
+            if (window.firebaseApi) {
+                setupFirebaseAuthListener();
+                await loadEpisodesFromFirestore({ quiet: true });
+            } else {
+                showToast('Firebase tidak dapat dimuatkan. Laman menggunakan kandungan contoh sementara.', 6500);
+            }
+            renderNavAuth();
         }); 
  
         // Toggle Password Visibility 
