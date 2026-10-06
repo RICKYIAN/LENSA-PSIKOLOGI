@@ -1168,6 +1168,8 @@
         // Application State
         let lensaContent = JSON.parse(JSON.stringify(DEFAULT_CONTENT));
         let currentUser = null;
+        let sessionTimer = null;
+        let warningTimer = null;
         let firebaseAuthListenerReady = false;
         
         // Device-level settings (persists across logouts)
